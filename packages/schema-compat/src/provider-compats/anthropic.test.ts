@@ -105,6 +105,25 @@ describe('AnthropicSchemaCompatLayer', () => {
     });
   });
 
+  describe('string pattern (issue #30105)', () => {
+    it('keeps pattern for non-haiku Claude models', () => {
+      const jsonSchema = layer.processToJSONSchema(z.object({ order_id: z.string().regex(/^ORD-[0-9]{6}$/) }));
+
+      expect(jsonSchema.properties?.order_id).toHaveProperty('pattern');
+    });
+
+    it('moves pattern into the description for claude-3.5-haiku', () => {
+      const haikuLayer = new AnthropicSchemaCompatLayer({
+        provider: 'anthropic',
+        modelId: 'claude-3.5-haiku-20241022',
+        supportsStructuredOutputs: false,
+      });
+      const jsonSchema = haikuLayer.processToJSONSchema(z.object({ order_id: z.string().regex(/^ORD-[0-9]{6}$/) }));
+
+      expect(jsonSchema.properties?.order_id).not.toHaveProperty('pattern');
+    });
+  });
+
   describe('number bounds', () => {
     it('should strip number bounds from JSON Schema while preserving Zod validation', async () => {
       const schema = z.object({

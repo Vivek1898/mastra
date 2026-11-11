@@ -167,7 +167,13 @@ export class AnthropicSchemaCompatLayer extends SchemaCompatLayer {
     } else if (isNumberSchema(schema)) {
       this.defaultNumberHandler(schema);
     } else if (isStringSchema(schema)) {
-      this.defaultStringHandler(schema);
+      // Mirror processZodType: non-haiku Claude models respect string constraints
+      // (including `pattern`), so only move them into the description for 3.5-haiku,
+      // which accepts but does not respect them. Otherwise `pattern` and friends were
+      // silently dropped from JSON Schema tool inputs.
+      if (this.getModel().modelId.includes('claude-3.5-haiku')) {
+        this.defaultStringHandler(schema);
+      }
     }
   }
 
